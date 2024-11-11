@@ -14,7 +14,7 @@ const (
 	ccmBlockSize         = 16
 	ccmTagSize           = 16
 	ccmMinimumTagSize    = 4
-	ccmStandardNonceSize = 13
+	ccmStandardNonceSize = 13 // 这里最好改成可修改，或者跟随iv判断
 )
 
 var errOpen = errors.New("cipher: message authentication failed")
