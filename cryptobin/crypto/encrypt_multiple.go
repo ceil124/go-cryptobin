@@ -18,7 +18,6 @@ import (
     "golang.org/x/crypto/chacha20"
     "golang.org/x/crypto/chacha20poly1305"
 
-    "github.com/deatil/go-cryptobin/tool"
     "github.com/deatil/go-cryptobin/cipher/sm4"
     "github.com/deatil/go-cryptobin/cipher/rc2"
     "github.com/deatil/go-cryptobin/cipher/rc5"
@@ -44,6 +43,7 @@ import (
     "github.com/deatil/go-cryptobin/cipher/twine"
     "github.com/deatil/go-cryptobin/cipher/misty1"
     cryptobin_des "github.com/deatil/go-cryptobin/cipher/des"
+    tool_cipher "github.com/deatil/go-cryptobin/tool/cipher"
 )
 
 // 获取模式方式
@@ -451,7 +451,6 @@ func (this EncryptRC5) getBlock(opt IOption) (cipher.Block, error) {
     key := opt.Key()
 
     // RC5 key is 16, 24 or 32 bytes.
-    // iv is 8 with 32, 16 with 64
     return rc5.NewCipher(key, wordSize, rounds)
 }
 
@@ -786,9 +785,12 @@ func (this EncryptXts) Encrypt(data []byte, opt IOption) ([]byte, error) {
     cipher := opt.Config().GetString("cipher")
     sectorNum := opt.Config().GetUint64("sector_num")
 
-    cipherFunc := tool.NewCipher().GetFunc(cipher)
+    cip, err := tool_cipher.GetCipher(cipher)
+    if err != nil {
+        return nil, err
+    }
 
-    xc, err := xts.NewCipher(cipherFunc, opt.Key())
+    xc, err := xts.NewCipher(cip, opt.Key())
     if err != nil {
         return nil, err
     }
@@ -827,9 +829,12 @@ func (this EncryptXts) Decrypt(data []byte, opt IOption) ([]byte, error) {
     cipher := opt.Config().GetString("cipher")
     sectorNum := opt.Config().GetUint64("sector_num")
 
-    cipherFunc := tool.NewCipher().GetFunc(cipher)
+    cip, err := tool_cipher.GetCipher(cipher)
+    if err != nil {
+        return nil, err
+    }
 
-    xc, err := xts.NewCipher(cipherFunc, opt.Key())
+    xc, err := xts.NewCipher(cip, opt.Key())
     if err != nil {
         return nil, err
     }

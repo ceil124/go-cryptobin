@@ -8,7 +8,7 @@ import (
     "crypto/x509"
     "crypto/x509/pkix"
 
-    "github.com/deatil/go-cryptobin/tool"
+    "github.com/deatil/go-cryptobin/tool/bmp_string"
     cryptobin_ber "github.com/deatil/go-cryptobin/ber"
     cryptobin_asn1 "github.com/deatil/go-cryptobin/ber/asn1"
     cryptobin_pkcs12 "github.com/deatil/go-cryptobin/pkcs12"
@@ -119,14 +119,14 @@ func Parse(ber []byte, password []byte) ([]byte, error) {
         authenticatedSafes = pfx.AuthSafe.Content.Bytes
     }
 
-    password, err = tool.BmpStringZeroTerminated(string(password))
+    password, err = bmp_string.BmpStringZeroTerminated(string(password))
     if err != nil {
         return nil, err
     }
 
     if len(pfx.MacData.Mac.Algorithm.Algorithm) == 0 {
         if !(len(password) == 2 && password[0] == 0 && password[1] == 0) {
-            return nil, errors.New("pkcs12: no MAC in data")
+            return nil, errors.New("go-cryptobin/pkcs12: no MAC in data")
         }
     } else {
         if err := pfx.MacData.Verify(authenticatedSafes, password); err != nil {
@@ -244,7 +244,7 @@ func Parse(ber []byte, password []byte) ([]byte, error) {
 
     pfxData, err := asn1.Marshal(pfxPdu)
     if err != nil {
-        return nil, errors.New("pkcs12: error writing P12 data: " + err.Error())
+        return nil, errors.New("go-cryptobin/pkcs12: error writing P12 data: " + err.Error())
     }
 
     return pfxData, nil

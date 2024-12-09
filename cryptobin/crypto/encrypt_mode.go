@@ -3,11 +3,10 @@ package crypto
 import (
 	"crypto/cipher"
 	"errors"
-
-	cryptobin_mode "github.com/deatil/go-cryptobin/mode"
-	"github.com/deatil/go-cryptobin/mode/ccm"
-	"github.com/deatil/go-cryptobin/mode/hctr"
-	"github.com/deatil/go-cryptobin/tool"
+    "github.com/deatil/go-cryptobin/mode/ccm"
+    "github.com/deatil/go-cryptobin/mode/hctr"
+    "github.com/deatil/go-cryptobin/tool/utils"
+    cryptobin_mode "github.com/deatil/go-cryptobin/mode"
 )
 
 type ModeECB struct{}
@@ -247,12 +246,12 @@ func (this ModeGCM) Encrypt(plain []byte, block cipher.Block, opt IOption) ([]by
 
 	iv := opt.Iv()
 
-	tagSize := opt.Config().GetInt("tagSize")
-	if tagSize > 0 {
-		aead, err = cipher.NewGCMWithTagSize(block, tagSize)
-	} else {
-		aead, err = cipher.NewGCMWithNonceSize(block, len(iv))
-	}
+    tagSize := opt.Config().GetInt("tag_size")
+    if tagSize > 0 {
+        aead, err = cipher.NewGCMWithTagSize(block, tagSize)
+    } else {
+        aead, err = cipher.NewGCMWithNonceSize(block, len(iv))
+    }
 
 	if err != nil {
 		return nil, err
@@ -272,12 +271,12 @@ func (this ModeGCM) Decrypt(data []byte, block cipher.Block, opt IOption) ([]byt
 
 	iv := opt.Iv()
 
-	tagSize := opt.Config().GetInt("tagSize")
-	if tagSize > 0 {
-		aead, err = cipher.NewGCMWithTagSize(block, tagSize)
-	} else {
-		aead, err = cipher.NewGCMWithNonceSize(block, len(iv))
-	}
+    tagSize := opt.Config().GetInt("tag_size")
+    if tagSize > 0 {
+        aead, err = cipher.NewGCMWithTagSize(block, tagSize)
+    } else {
+        aead, err = cipher.NewGCMWithNonceSize(block, len(iv))
+    }
 
 	if err != nil {
 		return nil, err
@@ -301,12 +300,12 @@ func (this ModeCCM) Encrypt(plain []byte, block cipher.Block, opt IOption) ([]by
 
 	iv := opt.Iv()
 
-	tagSize := opt.Config().GetInt("tagSize")
-	if tagSize > 0 {
-		aead, err = ccm.NewCCMWithNonceAndTagSize(block, len(iv), tagSize)
-	} else {
-		aead, err = ccm.NewCCMWithNonceSize(block, len(iv))
-	}
+    tagSize := opt.Config().GetInt("tag_size")
+    if tagSize > 0 {
+        aead, err = ccm.NewCCMWithTagSize(block, len(iv), tagSize)
+    } else {
+        aead, err = ccm.NewCCMWithNonceSize(block, len(iv))
+    }
 
 	if err != nil {
 		return nil, err
@@ -327,12 +326,12 @@ func (this ModeCCM) Decrypt(data []byte, block cipher.Block, opt IOption) ([]byt
 
 	iv := opt.Iv()
 
-	tagSize := opt.Config().GetInt("tagSize")
-	if tagSize > 0 {
-		aead, err = ccm.NewCCMWithNonceAndTagSize(block, len(iv), tagSize)
-	} else {
-		aead, err = ccm.NewCCMWithNonceSize(block, len(iv))
-	}
+    tagSize := opt.Config().GetInt("tag_size")
+    if tagSize > 0 {
+        aead, err = ccm.NewCCMWithTagSize(block, tagSize)
+    } else {
+        aead, err = ccm.NewCCMWithNonceSize(block, len(iv))
+    }
 
 	additional := opt.Config().GetBytes("additional")
 
@@ -393,7 +392,7 @@ type ModeOCFB struct{}
 func (this ModeOCFB) Encrypt(plain []byte, block cipher.Block, opt IOption) ([]byte, error) {
 	blockSize := block.BlockSize()
 
-	randData, _ := tool.GenRandom(blockSize)
+    randData, _ := utils.GenRandom(blockSize)
 
 	resync := opt.Config().GetBool("resync")
 

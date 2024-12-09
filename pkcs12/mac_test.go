@@ -17,7 +17,7 @@ func Test_hashByOID_fail(t *testing.T) {
         t.Error("should throw panic")
     }
 
-    check := "pkcs12: unsupported hash (OID: 1.222.643.777.12.13.5.1)"
+    check := "go-cryptobin/pkcs12: unsupported hash (OID: 1.222.643.777.12.13.5.1)"
     assertEqual(err.Error(), check, "Test_hashByOID_fail")
 }
 
@@ -26,12 +26,12 @@ func Test_prfByOIDPBMAC1_fail(t *testing.T) {
 
     oidFail := asn1.ObjectIdentifier{1, 222, 643, 777, 12, 13, 5, 1}
 
-    _, err := prfByOIDPBMAC1(oidFail)
+    _, err := pbmac1PRFByOID(oidFail)
     if err == nil {
         t.Error("should throw panic")
     }
 
-    check := "pkcs12: unsupported hash (OID: 1.222.643.777.12.13.5.1)"
+    check := "go-cryptobin/pkcs12: unsupported hash (OID: 1.222.643.777.12.13.5.1)"
     assertEqual(err.Error(), check, "Test_hashByOID_fail")
 }
 
