@@ -329,7 +329,7 @@ func (this ModeCCM) Decrypt(data []byte, block cipher.Block, opt IOption) ([]byt
 
     tagSize := opt.Config().GetInt("tag_size")
     if tagSize > 0 {
-        aead, err = ccm.NewCCMWithTagSize(block, tagSize)
+        aead, err = ccm.NewCCMWithNonceAndTagSize(block, len(iv), tagSize)
     } else {
         aead, err = ccm.NewCCMWithNonceSize(block, len(iv))
     }
