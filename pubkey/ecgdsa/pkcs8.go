@@ -40,7 +40,7 @@ func init() {
     AddNamedCurve(brainpool.P512t1(), brainpool.OIDBrainpoolP512t1)
 }
 
-// 私钥 - 包装
+// Marshal privateKey struct
 type pkcs8 struct {
     Version    int
     Algo       pkix.AlgorithmIdentifier
@@ -48,13 +48,13 @@ type pkcs8 struct {
     Attributes []asn1.RawValue `asn1:"optional,tag:0"`
 }
 
-// 公钥 - 包装
+// Marshal publicKey struct
 type pkixPublicKey struct {
     Algo      pkix.AlgorithmIdentifier
     BitString asn1.BitString
 }
 
-// 公钥信息 - 解析
+// Parse publicKey struct
 type publicKeyInfo struct {
     Raw       asn1.RawContent
     Algorithm pkix.AlgorithmIdentifier
@@ -123,12 +123,9 @@ func ParsePublicKey(derBytes []byte) (pub *PublicKey, err error) {
         return
     }
 
-    // 解析
-    keyData := &pki
-
-    oid := keyData.Algorithm.Algorithm
-    params := keyData.Algorithm.Parameters
-    der := cryptobyte.String(keyData.PublicKey.RightAlign())
+    oid := pki.Algorithm.Algorithm
+    params := pki.Algorithm.Parameters
+    der := cryptobyte.String(pki.PublicKey.RightAlign())
 
     if !oid.Equal(oidPublicKeyECGDSA) {
         err = errors.New("ecgdsa: unknown public key algorithm")
@@ -161,8 +158,6 @@ func ParsePublicKey(derBytes []byte) (pub *PublicKey, err error) {
 
     return
 }
-
-// ====================
 
 // Marshal PrivateKey to der
 func MarshalPrivateKey(key *PrivateKey) ([]byte, error) {

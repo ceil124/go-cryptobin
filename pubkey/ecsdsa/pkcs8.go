@@ -1,4 +1,4 @@
-package bign
+package ecsdsa
 
 import (
     "fmt"
@@ -9,22 +9,21 @@ import (
     "crypto/x509/pkix"
 
     "golang.org/x/crypto/cryptobyte"
-    "github.com/deatil/go-cryptobin/elliptic/bign"
+
+    "github.com/deatil/go-cryptobin/elliptic/frp256v1"
+    "github.com/deatil/go-cryptobin/elliptic/secp256k1"
+    "github.com/deatil/go-cryptobin/elliptic/brainpool"
 )
 
 const ecPrivKeyVersion = 1
 
 var (
-    oidPublicKeyBign = asn1.ObjectIdentifier{1, 2, 112, 0, 2, 0, 34, 101, 45, 2, 1}
+    oidPublicKeyECSDSA = asn1.ObjectIdentifier{1, 0, 14888, 3, 0, 11}
 
     oidNamedCurveP224 = asn1.ObjectIdentifier{1, 3, 132, 0, 33}
     oidNamedCurveP256 = asn1.ObjectIdentifier{1, 2, 840, 10045, 3, 1, 7}
     oidNamedCurveP384 = asn1.ObjectIdentifier{1, 3, 132, 0, 34}
     oidNamedCurveP521 = asn1.ObjectIdentifier{1, 3, 132, 0, 35}
-
-    oidNamedCurveBign256v1 = asn1.ObjectIdentifier{1, 2, 112, 0, 2, 0, 34, 101, 45, 3, 1}
-    oidNamedCurveBign384v1 = asn1.ObjectIdentifier{1, 2, 112, 0, 2, 0, 34, 101, 45, 3, 2}
-    oidNamedCurveBign512v1 = asn1.ObjectIdentifier{1, 2, 112, 0, 2, 0, 34, 101, 45, 3, 3}
 )
 
 func init() {
@@ -33,9 +32,17 @@ func init() {
     AddNamedCurve(elliptic.P384(), oidNamedCurveP384)
     AddNamedCurve(elliptic.P521(), oidNamedCurveP521)
 
-    AddNamedCurve(bign.P256v1(), oidNamedCurveBign256v1)
-    AddNamedCurve(bign.P384v1(), oidNamedCurveBign384v1)
-    AddNamedCurve(bign.P512v1(), oidNamedCurveBign512v1)
+    AddNamedCurve(frp256v1.FRP256v1(), frp256v1.OIDNamedCurveFRP256v1)
+    AddNamedCurve(secp256k1.S256(), secp256k1.OIDNamedCurveSecp256k1)
+
+    AddNamedCurve(brainpool.P256r1(), brainpool.OIDBrainpoolP256r1)
+    AddNamedCurve(brainpool.P256t1(), brainpool.OIDBrainpoolP256t1)
+    AddNamedCurve(brainpool.P320r1(), brainpool.OIDBrainpoolP320r1)
+    AddNamedCurve(brainpool.P320t1(), brainpool.OIDBrainpoolP320t1)
+    AddNamedCurve(brainpool.P384r1(), brainpool.OIDBrainpoolP384r1)
+    AddNamedCurve(brainpool.P384t1(), brainpool.OIDBrainpoolP384t1)
+    AddNamedCurve(brainpool.P512r1(), brainpool.OIDBrainpoolP512r1)
+    AddNamedCurve(brainpool.P512t1(), brainpool.OIDBrainpoolP512t1)
 }
 
 // Marshal privateKey struct
@@ -76,7 +83,7 @@ func MarshalPublicKey(pub *PublicKey) ([]byte, error) {
 
     oid, ok := OidFromNamedCurve(pub.Curve)
     if !ok {
-        return nil, errors.New("bign: unsupported bign curve")
+        return nil, errors.New("go-cryptobin/ecsdsa: unsupported ecgdsa curve")
     }
 
     var paramBytes []byte
@@ -85,11 +92,11 @@ func MarshalPublicKey(pub *PublicKey) ([]byte, error) {
         return nil, err
     }
 
-    publicKeyAlgorithm.Algorithm = oidPublicKeyBign
+    publicKeyAlgorithm.Algorithm = oidPublicKeyECSDSA
     publicKeyAlgorithm.Parameters.FullBytes = paramBytes
 
     if !pub.Curve.IsOnCurve(pub.X, pub.Y) {
-        return nil, errors.New("bign: invalid elliptic curve public key")
+        return nil, errors.New("go-cryptobin/ecsdsa: invalid elliptic curve public key")
     }
 
     publicKeyBytes = elliptic.Marshal(pub.Curve, pub.X, pub.Y)
@@ -112,7 +119,7 @@ func ParsePublicKey(derBytes []byte) (pub *PublicKey, err error) {
     if err != nil {
         return
     } else if len(rest) != 0 {
-        err = errors.New("bign: trailing data after ASN.1 of public-key")
+        err = errors.New("go-cryptobin/ecsdsa: trailing data after ASN.1 of public-key")
         return
     }
 
@@ -125,26 +132,26 @@ func ParsePublicKey(derBytes []byte) (pub *PublicKey, err error) {
     params := pki.Algorithm.Parameters
     der := cryptobyte.String(pki.PublicKey.RightAlign())
 
-    if !oid.Equal(oidPublicKeyBign) {
-        err = errors.New("bign: unknown public key algorithm")
+    if !oid.Equal(oidPublicKeyECSDSA) {
+        err = errors.New("go-cryptobin/ecsdsa: unknown public key algorithm")
         return
     }
 
     paramsDer := cryptobyte.String(params.FullBytes)
     namedCurveOID := new(asn1.ObjectIdentifier)
     if !paramsDer.ReadASN1ObjectIdentifier(namedCurveOID) {
-        return nil, errors.New("bign: invalid parameters")
+        return nil, errors.New("go-cryptobin/ecsdsa: invalid parameters")
     }
 
     namedCurve := NamedCurveFromOid(*namedCurveOID)
     if namedCurve == nil {
-        err = errors.New("bign: unsupported bign curve")
+        err = errors.New("go-cryptobin/ecsdsa: unsupported ecgdsa curve")
         return
     }
 
     x, y := elliptic.Unmarshal(namedCurve, der)
     if x == nil {
-        err = errors.New("bign: failed to unmarshal elliptic curve point")
+        err = errors.New("go-cryptobin/ecsdsa: failed to unmarshal elliptic curve point")
         return
     }
 
@@ -163,16 +170,16 @@ func MarshalPrivateKey(key *PrivateKey) ([]byte, error) {
 
     oid, ok := OidFromNamedCurve(key.Curve)
     if !ok {
-        return nil, errors.New("bign: unsupported bign curve")
+        return nil, errors.New("go-cryptobin/ecsdsa: unsupported ecgdsa curve")
     }
 
     oidBytes, err := asn1.Marshal(oid)
     if err != nil {
-        return nil, errors.New("bign: failed to marshal algo param: " + err.Error())
+        return nil, errors.New("go-cryptobin/ecsdsa: failed to marshal algo param: " + err.Error())
     }
 
     privKey.Algo = pkix.AlgorithmIdentifier{
-        Algorithm:  oidPublicKeyBign,
+        Algorithm:  oidPublicKeyECSDSA,
         Parameters: asn1.RawValue{
             FullBytes: oidBytes,
         },
@@ -180,7 +187,7 @@ func MarshalPrivateKey(key *PrivateKey) ([]byte, error) {
 
     privKey.PrivateKey, err = marshalECPrivateKeyWithOID(key, nil)
     if err != nil {
-        return nil, errors.New("bign: failed to marshal EC private key while building PKCS#8: " + err.Error())
+        return nil, errors.New("go-cryptobin/ecsdsa: failed to marshal EC private key while building PKCS#8: " + err.Error())
     }
 
     return asn1.Marshal(privKey)
@@ -196,8 +203,8 @@ func ParsePrivateKey(derBytes []byte) (*PrivateKey, error) {
         return nil, err
     }
 
-    if !privKey.Algo.Algorithm.Equal(oidPublicKeyBign) {
-        err = errors.New("bign: unknown private key algorithm")
+    if !privKey.Algo.Algorithm.Equal(oidPublicKeyECSDSA) {
+        err = errors.New("go-cryptobin/ecsdsa: unknown private key algorithm")
         return nil, err
     }
 
@@ -210,7 +217,7 @@ func ParsePrivateKey(derBytes []byte) (*PrivateKey, error) {
 
     key, err := parseECPrivateKey(namedCurveOID, privKey.PrivateKey)
     if err != nil {
-        return nil, errors.New("bign: failed to parse EC private key embedded in PKCS#8: " + err.Error())
+        return nil, errors.New("go-cryptobin/ecsdsa: failed to parse EC private key embedded in PKCS#8: " + err.Error())
     }
 
     return key, nil
@@ -220,10 +227,10 @@ func ParsePrivateKey(derBytes []byte) (*PrivateKey, error) {
 // sets the curve ID to the given OID, or omits it if OID is nil.
 func marshalECPrivateKeyWithOID(key *PrivateKey, oid asn1.ObjectIdentifier) ([]byte, error) {
     if !key.Curve.IsOnCurve(key.X, key.Y) {
-        return nil, errors.New("bign: invalid elliptic key public key")
+        return nil, errors.New("go-cryptobin/ecsdsa: invalid elliptic key public key")
     }
 
-    privateKey := make([]byte, BitsToBytes(key.D.BitLen()))
+    privateKey := make([]byte, bitsToBytes(key.D.BitLen()))
 
     return asn1.Marshal(ecPrivateKey{
         Version:       1,
@@ -242,11 +249,11 @@ func marshalECPrivateKeyWithOID(key *PrivateKey, oid asn1.ObjectIdentifier) ([]b
 func parseECPrivateKey(namedCurveOID *asn1.ObjectIdentifier, der []byte) (key *PrivateKey, err error) {
     var privKey ecPrivateKey
     if _, err := asn1.Unmarshal(der, &privKey); err != nil {
-        return nil, errors.New("bign: failed to parse EC private key: " + err.Error())
+        return nil, errors.New("go-cryptobin/ecsdsa: failed to parse EC private key: " + err.Error())
     }
 
     if privKey.Version != ecPrivKeyVersion {
-        return nil, fmt.Errorf("bign: unknown EC private key version %d", privKey.Version)
+        return nil, fmt.Errorf("go-cryptobin/ecsdsa: unknown EC private key version %d", privKey.Version)
     }
 
     var curve elliptic.Curve
@@ -257,14 +264,14 @@ func parseECPrivateKey(namedCurveOID *asn1.ObjectIdentifier, der []byte) (key *P
     }
 
     if curve == nil {
-        return nil, errors.New("bign: unknown elliptic curve")
+        return nil, errors.New("go-cryptobin/ecsdsa: unknown elliptic curve")
     }
 
     k := new(big.Int).SetBytes(privKey.PrivateKey)
 
     curveOrder := curve.Params().N
     if k.Cmp(curveOrder) >= 0 {
-        return nil, errors.New("bign: invalid elliptic curve private key value")
+        return nil, errors.New("go-cryptobin/ecsdsa: invalid elliptic curve private key value")
     }
 
     priv := new(PrivateKey)
@@ -275,18 +282,20 @@ func parseECPrivateKey(namedCurveOID *asn1.ObjectIdentifier, der []byte) (key *P
 
     for len(privKey.PrivateKey) > len(privateKey) {
         if privKey.PrivateKey[0] != 0 {
-            return nil, errors.New("bign: invalid private key length")
+            return nil, errors.New("go-cryptobin/ecsdsa: invalid private key length")
         }
 
         privKey.PrivateKey = privKey.PrivateKey[1:]
     }
 
     copy(privateKey[len(privateKey)-len(privKey.PrivateKey):], privKey.PrivateKey)
-    priv.X, priv.Y = curve.ScalarBaseMult(privateKey)
+
+    d := new(big.Int).SetBytes(privateKey)
+    priv.X, priv.Y = curve.ScalarBaseMult(d.Bytes())
 
     return priv, nil
 }
 
-func BitsToBytes(bits int) int {
+func bitsToBytes(bits int) int {
     return (bits + 7) / 8
 }
